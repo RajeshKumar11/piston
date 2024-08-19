@@ -3,6 +3,10 @@ FROM node:15.10.0-buster-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN dpkg-reconfigure -p critical dash
+
+# Create the /piston directory
+RUN mkdir -p /piston
+
 RUN for i in $(seq 1001 1500); do \
         groupadd -g $i runner$i && \
         useradd -M runner$i -g $i -u $i ; \
