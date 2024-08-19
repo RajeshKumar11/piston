@@ -19,16 +19,17 @@ RUN apt-get update && apt-get install -y unzip autoconf build-essential libssl-d
     rm -rf /var/lib/apt/lists/* && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3.7 2
 
-# Copy entrypoint.sh, mkindex.sh, and serve.py from the repo folder to the root of the container
-ADD repo/entrypoint.sh /entrypoint.sh
-ADD repo/mkindex.sh /mkindex.sh
-ADD repo/serve.py /serve.py
+# Copy the entire repo folder to the container
+COPY repo /repo
 
 # Make the scripts executable
-RUN chmod +x /entrypoint.sh /mkindex.sh /serve.py
+RUN chmod +x /repo/entrypoint.sh /repo/mkindex.sh /repo/serve.py
+
+# Set the working directory to the repo folder
+WORKDIR /repo
 
 # Set the entrypoint for the container
-ENTRYPOINT ["bash", "/entrypoint.sh"]
+ENTRYPOINT ["bash", "/repo/entrypoint.sh"]
 
 # Default command to run
 CMD ["--no-build"]
