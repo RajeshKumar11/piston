@@ -49,10 +49,10 @@ class Package {
             await fs.rm(this.install_path, { recursive: true, force: true });
         }
 
-        logger.debug(`Making directory ${this.install_path}`);
+        logger.info(`Making directory ${this.install_path}`);
         await fs.mkdir(this.install_path, { recursive: true });
 
-        logger.debug(
+        logger.info(
             `Downloading package from ${this.download} in to ${this.install_path}`
         );
         const pkgpath = path.join(this.install_path, 'pkg.tar.gz');
@@ -66,8 +66,8 @@ class Package {
             file_stream.on('finish', resolve);
         });
 
-        logger.debug('Validating checksums');
-        logger.debug(`Assert sha256(pkg.tar.gz) == ${this.checksum}`);
+        logger.info('Validating checksums');
+        logger.info(`Assert sha256(pkg.tar.gz) == ${this.checksum}`);
         const hash = crypto.create_hash('sha256');
 
         const read_stream = fss.create_read_stream(pkgpath);
@@ -85,7 +85,7 @@ class Package {
             );
         }
 
-        logger.debug(
+        logger.info(
             `Extracting package files from archive ${pkgpath} in to ${this.install_path}`
         );
 
@@ -103,7 +103,49 @@ class Package {
 
             proc.once('error', reject);
         });
-
+    
+        // Add package installation for Node.js
+        if (this.language === 'node') {
+            logger.info('Installing Node.js packages: chai, structured, mocha');
+            
+            // Ensure the extraction process is completed before running this
+            logger.info(`Navigating to ${this.install_path}/lib/node_modules and installing packages into existing node_modules.`);
+            
+            // Define the installation path to the lib/node_modules directory
+            const installationPath = path.join(this.install_path, 'lib/node_modules');
+        
+            // Ensure the lib/node_modules directory exists
+            if (!fss.existsSync(installationPath)) {
+                logger.info(`Directory ${installationPath} does not exist. Creating it.`);
+                await fs.mkdir(installationPath, { recursive: true });
+            }
+        
+            await new Promise((resolve, reject) => {
+                // Run npm install in /piston/packages/node/20.11.1/lib/node_modules
+                const npmInstall = cp.exec(
+                    `npm install chai@4.3.7 structured mocha`, // Install the packages
+                    { cwd: installationPath } // Set the working directory to the 'lib/node_modules' directory
+                );
+        
+                // Forward the output of npm install to the console
+                npmInstall.stdout.pipe(process.stdout);
+                npmInstall.stderr.pipe(process.stderr);
+        
+                // Handle process completion
+                npmInstall.once('exit', (code, _) => {
+                    if (code === 0) {
+                        logger.info('Node.js packages installed successfully in /lib/node_modules');
+                        resolve();
+                    } else {
+                        reject(new Error('npm install failed'));
+                    }
+                });
+        
+                // Handle process errors
+                npmInstall.once('error', reject);
+            });
+        }
+    
         logger.debug('Registering runtime');
         runtime.load_package(this.install_path);
 
