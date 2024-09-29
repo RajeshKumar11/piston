@@ -27,7 +27,8 @@ COPY --from=isolate /usr/local/etc/isolate /usr/local/etc/isolate
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-RUN chmod -R 777 /piston
+# Absolute path to store all piston related data
+RUN mkdir -p /piston && chmod -R 777 /piston && chown -R piston:piston /piston
 
 WORKDIR /piston_api
 COPY ["package.json", "package-lock.json", "./"]
