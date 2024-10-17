@@ -32,6 +32,14 @@ docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:
 
 ### In Render using CMD for deployment
 
+#### Option 1: RECOMMENDED
+
+```bash
+docker build -t piston-api . && docker run -d --privileged -p 2000:2000 --name piston-container piston-api
+```
+
+#### Option 2:
+
 ```bash
 docker build -t piston-api . && docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:2000 --name piston-container piston-api
 ```

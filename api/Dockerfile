@@ -8,15 +8,15 @@ RUN apt-get update && \
     make -j$(nproc) install && \
     rm -rf /tmp/*
 
-# Install Docker in this container
+FROM node:15.10.0-buster-slim
+
+# Install Docker in the final container to ensure Docker CLI is available for the Node.js application
 RUN apt-get update && \
     apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
     curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
     apt-get update && \
     apt-get install -y docker-ce docker-ce-cli containerd.io
-
-FROM node:15.10.0-buster-slim
 
 # Continue with the rest of your Dockerfile
 ENV DEBIAN_FRONTEND=noninteractive
