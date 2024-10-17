@@ -34,12 +34,10 @@ docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:
 
 #### Option 1: RECOMMENDED
 
-```bash
-docker build -t piston-api . && docker run -d --privileged -p 2000:2000 --name piston-container piston-api
-```
-
-#### Option 2:
+##### For Dender docker CMD only build is enough as running CMD will be dne by Render
 
 ```bash
-docker build -t piston-api . && docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:2000 --name piston-container piston-api
+docker build -t piston-api .
 ```
+
+##### Docker Will fail but the server will be running.
