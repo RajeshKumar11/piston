@@ -1,3 +1,4 @@
+# Stage 1: Build and install isolate
 FROM buildpack-deps:buster AS isolate
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git libcap-dev && \
@@ -8,21 +9,15 @@ RUN apt-get update && \
     make -j$(nproc) install && \
     rm -rf /tmp/*
 
+# Stage 2: Main application setup
 FROM node:15.10.0-buster-slim
 
-# Install Docker in the final container to ensure Docker CLI is available for the Node.js application
-RUN apt-get update && \
-    apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
-    apt-get update && \
-    apt-get install -y docker-ce docker-ce-cli containerd.io
-
-# Continue with the rest of your Dockerfile
+# Configure environment to prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN dpkg-reconfigure -p critical dash
-RUN apt-get update && \
+# Reconfigure dash (default shell) and install necessary packages
+RUN dpkg-reconfigure -p critical dash && \
+    apt-get update && \
     apt-get install -y libxml2 gnupg tar coreutils util-linux libc6-dev \
     binutils build-essential locales libpcre3-dev libevent-dev libgmp3-dev \
     libncurses6 libncurses5 libedit-dev libseccomp-dev rename procps python3 \
@@ -30,19 +25,32 @@ RUN apt-get update && \
     libfftw3-dev libglpk-dev libqhull-dev libqrupdate-dev libsuitesparse-dev \
     libsundials-dev libpcre2-dev libcap-dev && \
     rm -rf /var/lib/apt/lists/*
+
+# Add user 'piston' without a home directory
 RUN useradd -M piston
+
+# Copy isolate binaries from the isolate stage
 COPY --from=isolate /usr/local/bin/isolate /usr/local/bin
 COPY --from=isolate /usr/local/etc/isolate /usr/local/etc/isolate
 
+# Generate locale settings
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-# Absolute path to store all piston related data
+# Set up a directory for Piston related data with proper permissions
 RUN mkdir -p /piston && chmod -R 777 /piston && chown -R piston:piston /piston
 
+# Set up the working directory for the Node.js application
 WORKDIR /piston_api
+
+# Copy the package files and install dependencies
 COPY ["package.json", "package-lock.json", "./"]
 RUN npm install
+
+# Copy the source code to the container
 COPY ./src ./src
 
-CMD ["/piston_api/src/docker-entrypoint.sh"]
+# Expose port 2000 for the application
 EXPOSE 2000/tcp
+
+# Set the default command to start the application
+CMD ["/piston_api/src/docker-entrypoint.sh"]
