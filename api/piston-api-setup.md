@@ -22,4 +22,16 @@ To Avoid the issue of **mkdir: cannot create directory 'isolate/': Read-only fil
 docker run -d --privileged -p 2000:2000 --name piston-container piston-api
 ```
 
+Suggestion:
+
+```bash
+docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:2000 --name piston-container piston-api
+```
+
 -   This command runs the container in detached mode (`-d`), maps port `2000` of the host to port `2000` of the container, and names the container `piston-container`.
+
+### In Render using CMD for deployment
+
+```bash
+docker build -t piston-api . && docker run -d --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2000:2000 --name piston-container piston-api
+```
